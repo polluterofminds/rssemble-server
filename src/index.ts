@@ -50,18 +50,22 @@ app.post("/webhooks", async (c) => {
     switch (event.event) {
       case "frame_added":
         if (event.notificationDetails) {
+          console.log("Adding mini app!");
           await setUserNotificationDetails(fid, event.notificationDetails);
         }
         break;
       case "frame_removed":
+        console.log("Removing mini app");
         await deleteUserNotificationDetails(fid);
 
         break;
       case "notifications_enabled":
+        console.log("Notifications enabled");
         await setUserNotificationDetails(fid, event.notificationDetails);
 
         break;
       case "notifications_disabled":
+        console.log("Notifications disabled");
         await deleteUserNotificationDetails(fid);
 
         break;
