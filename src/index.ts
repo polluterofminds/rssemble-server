@@ -1,25 +1,41 @@
-import { Hono } from 'hono'
-import { fetchAllFeeds, getFeedDetails, validateFeed } from './utils/feed'
-import { CronJob } from 'cron';
-import { sendNotifications } from './utils/notifications';
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { cors } from "hono/cors";
+import dotenv from "dotenv";
 import { createAppClient, viemConnector } from "@farcaster/auth-client";
 import {
   createVerifyAppKeyWithHub,
   ParseWebhookEvent,
   parseWebhookEvent,
 } from "@farcaster/frame-node";
-import { deleteUserNotificationDetails, setUserNotificationDetails } from './utils/db';
-import { Feed } from './utils/types';
-import { cors } from 'hono/cors';
+import { Bindings, Feed } from "./utils/types";
 
-const app = new Hono()
+//  @ts-expect-error no types needed
+import cron from "node-cron";
+import { deleteUserNotificationDetails, setUserNotificationDetails } from "./utils/db";
+import { fetchAllFeeds, validateFeed } from "./utils/feed";
+import { sendNotifications } from "./utils/notifications";
+
+const bypassRoutes = ["/webhooks", "/rss-webhooks", "/feeds", "/feeds/validate"];
+
+const appClient = createAppClient({
+  relay: "https://relay.farcaster.xyz",
+  ethereum: viemConnector(),
+});
+
+// Load environment variables
+dotenv.config();
+
+// Get environment variables
+const env: Bindings = {
+  ALCHEMY_URL: process.env.ALCHEMY_URL || "",
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+  SUPABASE_URL: process.env.SUPABASE_URL || "",  
+};
+
+const app = new Hono();
 
 app.use(cors());
-
-// const appClient = createAppClient({
-//   relay: "https://relay.farcaster.xyz",
-//   ethereum: viemConnector(),
-// });
 
 app.post("/webhooks", async (c) => {
   try {
@@ -155,16 +171,21 @@ async function checkRecentFeedUpdates(): Promise<void> {
   }
 }
 
-const feedCheckJob = new CronJob(
-  '0 * * * *', 
-  checkRecentFeedUpdates,
-  null, 
-  false,
-  'UTC'
-);
+// Start the server
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+console.log(`Server is running on port ${port}`);
 
-feedCheckJob.start();
+cron.schedule('0 * * * *', async () => {
+  try {
+    console.log("Checking for feed updates");
+    await checkRecentFeedUpdates();   
+  } catch (error) {
+    console.log("Cron error");
+    console.log(error);
+  }
+});
 
-console.log('Feed update checker initialized and running...');
-
-export default app
+serve({
+  fetch: app.fetch,
+  port: port,
+});

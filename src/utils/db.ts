@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { FrameNotificationDetails } from "./types";
+import dotenv from "dotenv";
+dotenv.config();
 
 const supabaseUrl: string = process.env.SUPABASE_URL!;
 const supabaseKey: string = process.env.SUPABASE_SERVICE_ROLE_KEY!;

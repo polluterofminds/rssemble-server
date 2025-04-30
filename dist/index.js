@@ -1,18 +1,34 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const hono_1 = require("hono");
-const feed_1 = require("./utils/feed");
-const cron_1 = require("cron");
-const notifications_1 = require("./utils/notifications");
-const frame_node_1 = require("@farcaster/frame-node");
-const db_1 = require("./utils/db");
+const node_server_1 = require("@hono/node-server");
 const cors_1 = require("hono/cors");
+const dotenv_1 = __importDefault(require("dotenv"));
+const auth_client_1 = require("@farcaster/auth-client");
+const frame_node_1 = require("@farcaster/frame-node");
+//  @ts-expect-error no types needed
+const node_cron_1 = __importDefault(require("node-cron"));
+const db_1 = require("./utils/db");
+const feed_1 = require("./utils/feed");
+const notifications_1 = require("./utils/notifications");
+const bypassRoutes = ["/webhooks", "/rss-webhooks", "/feeds", "/feeds/validate"];
+const appClient = (0, auth_client_1.createAppClient)({
+    relay: "https://relay.farcaster.xyz",
+    ethereum: (0, auth_client_1.viemConnector)(),
+});
+// Load environment variables
+dotenv_1.default.config();
+// Get environment variables
+const env = {
+    ALCHEMY_URL: process.env.ALCHEMY_URL || "",
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    SUPABASE_URL: process.env.SUPABASE_URL || "",
+};
 const app = new hono_1.Hono();
 app.use((0, cors_1.cors)());
-// const appClient = createAppClient({
-//   relay: "https://relay.farcaster.xyz",
-//   ethereum: viemConnector(),
-// });
 app.post("/webhooks", async (c) => {
     try {
         const requestJson = await c.req.json();
@@ -119,7 +135,20 @@ async function checkRecentFeedUpdates() {
         console.error('Error checking feed updates:', error);
     }
 }
-const feedCheckJob = new cron_1.CronJob('0 * * * *', checkRecentFeedUpdates, null, false, 'UTC');
-feedCheckJob.start();
-console.log('Feed update checker initialized and running...');
-exports.default = app;
+// Start the server
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+console.log(`Server is running on port ${port}`);
+node_cron_1.default.schedule('0 * * * *', async () => {
+    try {
+        console.log("Checking for feed updates");
+        await checkRecentFeedUpdates();
+    }
+    catch (error) {
+        console.log("Cron error");
+        console.log(error);
+    }
+});
+(0, node_server_1.serve)({
+    fetch: app.fetch,
+    port: port,
+});

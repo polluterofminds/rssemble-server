@@ -1,3 +1,9 @@
+export type Bindings = {
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_URL: string;
+  ALCHEMY_URL: string;
+};
+
 export type FeedData = {
   fid: number;
   feedUrls: string[];

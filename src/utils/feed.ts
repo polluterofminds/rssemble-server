@@ -1,6 +1,7 @@
 import { createPublicClient, http, getContract, type Address } from "viem";
 import { baseSepolia } from "viem/chains"
 import { abi } from "./abi";
+import { FeedData, FeedItem } from "./types";
 const Parser = require("rss-parser");
 
 const parser = new Parser({
@@ -27,7 +28,7 @@ const contract = getContract({
 });
 
 // Function to standardize a parsed feed item
-const standardizeFeedItem = (item, feedTitle = "") => {
+const standardizeFeedItem = (item: any, feedTitle = "") => {
   return {
     title: item.title || "",
     link: item.link || item.guid || "",
@@ -72,7 +73,7 @@ export const validateFeed = async (url: string) => {
 const parseFeed = async (url: string) => {
   try {
     const feed = await parser.parseURL(url);
-    const standardizedItems = feed.items.map((item) =>
+    const standardizedItems = feed.items.map((item: FeedItem) =>
       standardizeFeedItem(item, feed.title || "")
     );
 
@@ -91,15 +92,16 @@ const parseFeed = async (url: string) => {
 export const fetchAllFeeds = async () => {
   try {
     console.log("Fetching feeds from contract...");
+    //  @ts-expect-error 
     const [fids, allFeedUrls] = await contract.read.getAllFeeds();
     console.log({fids});
-    const feedsData = fids.map((fid, index) => ({
+    const feedsData = fids.map((fid: number, index: number) => ({
       fid: Number(fid),
       feedUrls: allFeedUrls[index],
     }));
 
     const feedsWithContent = await Promise.all(
-      feedsData.map(async (feed) => {
+      feedsData.map(async (feed: FeedData) => {
         try {
           const parsedFeeds = await Promise.all(
             feed.feedUrls.map(async (url) => {

@@ -87,6 +87,7 @@ const parseFeed = async (url) => {
 const fetchAllFeeds = async () => {
     try {
         console.log("Fetching feeds from contract...");
+        //  @ts-expect-error 
         const [fids, allFeedUrls] = await contract.read.getAllFeeds();
         console.log({ fids });
         const feedsData = fids.map((fid, index) => ({
