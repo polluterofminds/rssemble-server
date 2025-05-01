@@ -162,7 +162,8 @@ async function checkRecentFeedUpdates(): Promise<void> {
       for (const update of recentUpdates) {
         await sendNotifications(
           "New post!",
-          `New post from ${update.author}: "${update.title}"`
+          `New post from ${update.author}: "${update.title}"`,
+          update.link
         );
         
         console.log(`Notification sent for feed ID ${update.fid}: ${update.title}`);

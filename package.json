@@ -10,11 +10,13 @@
     "@farcaster/auth-client": "^0.3.0",
     "@farcaster/frame-node": "^0.0.21",
     "@hono/node-server": "^1.14.1",
+    "@noble/curves": "^1.9.0",
     "@supabase/supabase-js": "^2.49.4",
     "cron": "^4.3.0",
     "dotenv": "^16.5.0",
     "feedparser": "^2.2.10",
     "hono": "^4.7.7",
+    "js-base64": "^3.7.7",
     "node-cron": "^3.0.3",
     "rss-parser": "^3.13.0",
     "viem": "^2.28.0"

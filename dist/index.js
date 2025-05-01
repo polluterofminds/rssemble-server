@@ -40,16 +40,20 @@ app.post("/webhooks", async (c) => {
         switch (event.event) {
             case "frame_added":
                 if (event.notificationDetails) {
+                    console.log("Adding mini app!");
                     await (0, db_1.setUserNotificationDetails)(fid, event.notificationDetails);
                 }
                 break;
             case "frame_removed":
+                console.log("Removing mini app");
                 await (0, db_1.deleteUserNotificationDetails)(fid);
                 break;
             case "notifications_enabled":
+                console.log("Notifications enabled");
                 await (0, db_1.setUserNotificationDetails)(fid, event.notificationDetails);
                 break;
             case "notifications_disabled":
+                console.log("Notifications disabled");
                 await (0, db_1.deleteUserNotificationDetails)(fid);
                 break;
         }
@@ -123,7 +127,7 @@ async function checkRecentFeedUpdates() {
         if (recentUpdates.length > 0) {
             console.log(`Found ${recentUpdates.length} feeds with recent updates`);
             for (const update of recentUpdates) {
-                await (0, notifications_1.sendNotifications)("New post!", `New post from ${update.author}: "${update.title}"`);
+                await (0, notifications_1.sendNotifications)("New post!", `New post from ${update.author}: "${update.title}"`, update.link);
                 console.log(`Notification sent for feed ID ${update.fid}: ${update.title}`);
             }
         }

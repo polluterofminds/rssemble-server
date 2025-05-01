@@ -1,8 +1,20 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendNotifications = void 0;
 exports.bulkSendFrameNotification = bulkSendFrameNotification;
 const db_1 = require("./db");
+const farma_sdk_1 = __importDefault(require("./farma-sdk"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+const farma = new farma_sdk_1.default({
+    hostname: "https://farma.pingem.xyz:443",
+    port: 8080,
+    frameId: "6ssaw",
+    privateKey: process.env.FARMA_PRIVATE_KEY
+});
 const appUrl = "";
 function splitArrayIntoChunks(tokenArray, maxChunkSize = 100) {
     const result = [];
@@ -12,53 +24,59 @@ function splitArrayIntoChunks(tokenArray, maxChunkSize = 100) {
     }
     return result;
 }
-async function bulkSendFrameNotification({ url, tokens, title, body, }) {
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            notificationId: crypto.randomUUID(),
-            title,
-            body,
-            targetUrl: appUrl,
-            tokens: tokens,
-        }),
-    });
-    const responseJson = await response.json();
-    if (response.status === 200) {
-        return { state: "success" };
-    }
-    else {
-        return { state: "error", error: responseJson };
-    }
+async function bulkSendFrameNotification({ url, tokens, title, body, postUrl }) {
+    // const response = await fetch(url, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     notificationId: crypto.randomUUID(),
+    //     title,
+    //     body,
+    //     targetUrl: appUrl,
+    //     tokens: tokens,
+    //   }),
+    // });
+    // const responseJson = await response.json();
+    // if (response.status === 200) {
+    //   return { state: "success" };
+    // } else {
+    //   return { state: "error", error: responseJson };
+    // }
+    await farma.sendNotification("6ssaw", title, body, postUrl, tokens);
 }
-const sendNotifications = async (title, body) => {
+const sendNotifications = async (title, body, url) => {
     try {
         const notifDetails = await (0, db_1.getNotifcationDetailsForAllPlayers)();
-        const urlToUse = notifDetails && notifDetails[0] ? notifDetails[0].notification_url : "";
+        const urlToUse = "https://farma.pingem.xyz:443/api/v2/notification/6ssaw"; //notifDetails && notifDetails[0] ? notifDetails[0].notification_url : "";
         const notificationTokens = notifDetails
-            ? notifDetails.map((n) => n.notification_token)
+            ? notifDetails.map((n) => n.fid)
             : [];
         if (notificationTokens.length > 100) {
             const notifChunks = splitArrayIntoChunks(notificationTokens);
             for (const chunk of notifChunks) {
                 //  Send notifications to all
+                console.log("Chunk of users");
+                console.log(chunk);
                 await bulkSendFrameNotification({
                     url: urlToUse,
                     tokens: chunk,
                     title: title,
                     body: body,
+                    postUrl: url
                 });
             }
         }
         else {
+            console.log("Fewer than 100 users");
+            console.log(notificationTokens);
             await bulkSendFrameNotification({
                 url: urlToUse,
                 tokens: notificationTokens,
                 title: title,
                 body: body,
+                postUrl: url
             });
         }
     }
