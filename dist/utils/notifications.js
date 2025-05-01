@@ -1,21 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendNotifications = void 0;
 exports.bulkSendFrameNotification = bulkSendFrameNotification;
 const db_1 = require("./db");
-const farma_sdk_1 = __importDefault(require("./farma-sdk"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const farma = new farma_sdk_1.default({
-    hostname: "https://farma.pingem.xyz:443",
-    port: 8080,
-    frameId: "6ssaw",
-    privateKey: process.env.FARMA_PRIVATE_KEY
-});
-const appUrl = "";
 function splitArrayIntoChunks(tokenArray, maxChunkSize = 100) {
     const result = [];
     for (let i = 0; i < tokenArray.length; i += maxChunkSize) {
@@ -25,26 +12,26 @@ function splitArrayIntoChunks(tokenArray, maxChunkSize = 100) {
     return result;
 }
 async function bulkSendFrameNotification({ url, tokens, title, body, postUrl }) {
-    // const response = await fetch(url, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     notificationId: crypto.randomUUID(),
-    //     title,
-    //     body,
-    //     targetUrl: appUrl,
-    //     tokens: tokens,
-    //   }),
-    // });
-    // const responseJson = await response.json();
-    // if (response.status === 200) {
-    //   return { state: "success" };
-    // } else {
-    //   return { state: "error", error: responseJson };
-    // }
-    await farma.sendNotification("6ssaw", title, body, postUrl, tokens);
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            notificationId: crypto.randomUUID(),
+            title,
+            body,
+            targetUrl: postUrl,
+            tokens: tokens,
+        }),
+    });
+    const responseJson = await response.json();
+    if (response.status === 200) {
+        return { state: "success" };
+    }
+    else {
+        return { state: "error", error: responseJson };
+    }
 }
 const sendNotifications = async (title, body, url) => {
     try {

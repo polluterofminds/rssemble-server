@@ -1,17 +1,5 @@
 import { getNotifcationDetailsForAllPlayers } from "./db";
 import { SendFrameNotificationResult } from "./types";
-import FarmaSDK from './farma-sdk';
-import dotenv from 'dotenv';
-dotenv.config();
-
-const farma = new FarmaSDK({
-  hostname: "https://farma.pingem.xyz:443",
-  port: 8080,           
-  frameId: "6ssaw",     
-  privateKey: process.env.FARMA_PRIVATE_KEY
-});
-
-const appUrl = "";
 
 function splitArrayIntoChunks(tokenArray: string[], maxChunkSize = 100) {
   const result = [];
@@ -32,41 +20,32 @@ export async function bulkSendFrameNotification({
   postUrl
 }: {
   url: string;
-  tokens: any;
+  tokens: string[];
   title: string;
   body: string;
   postUrl?: string
-}) {
-  // const response = await fetch(url, {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify({
-  //     notificationId: crypto.randomUUID(),
-  //     title,
-  //     body,
-  //     targetUrl: appUrl,
-  //     tokens: tokens,
-  //   }),
-  // });
+}): Promise<SendFrameNotificationResult> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      notificationId: crypto.randomUUID(),
+      title,
+      body,
+      targetUrl: postUrl,
+      tokens: tokens,
+    }),
+  });
 
-  // const responseJson = await response.json();
+  const responseJson = await response.json();
 
-  // if (response.status === 200) {
-  //   return { state: "success" };
-  // } else {
-  //   return { state: "error", error: responseJson };
-  // }
-
-  await farma.sendNotification(
-    "6ssaw",
-    title,
-    body,
-    postUrl,
-    tokens
-);
-
+  if (response.status === 200) {
+    return { state: "success" };
+  } else {
+    return { state: "error", error: responseJson };
+  }
 }
 
 export const sendNotifications = async (title: string, body: string, url?: string) => {
